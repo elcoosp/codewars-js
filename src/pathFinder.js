@@ -21,29 +21,64 @@ const go = {
   west: ([x, y]) => [x - 1, y]
 }
 
+function* exploreNeighboors(coords, maze) {
+  for (const direction in go) {
+    const [x, y] = go[direction](coords)
+    yield { value: maze[x] ? maze[x][y] : undefined, currentCoords: [x, y] }
+  }
+}
+
+const exploreMaze = (
+  maze,
+  splittedMaze = maze.split('\n'),
+  coords = [0, 0],
+  goal = [maze.length - 1, maze.length - 1]
+) => {
+  console.log(splittedMaze)
+
+  for (const { value, currentCoords } of exploreNeighboors(coords, maze)) {
+    console.log(value)
+
+    if (isGoal(currentCoords, goal)) return true
+    switch (value) {
+      case undefined:
+        return false
+      case 'W':
+        return false
+    }
+  }
+}
+
+console.log(
+  exploreMaze(
+    `.W.
+...
+W..`
+  )
+)
+
 const pathFinder = (
   maze,
   coords = [0, 0],
   explored = [[]],
   goal = [maze.length - 1, maze.length - 1]
 ) => {
-  console.log(coords)
-
+  const splittedMaze = maze.split('\n')
   if (isExplored(coords, explored)) return explored[coords[0]][coords[1]]
-  if (isOutOfBounds(coords, maze)) return false
-  if (isWall(coords, maze)) return false
+  if (isOutOfBounds(coords, splittedMaze)) return false
+  if (isWall(coords, splittedMaze)) return false
   if (isGoal(coords, goal)) return true
   else {
     // Mark coords as part of the solution
     for (const direction of ['north', 'east', 'south', 'west'])
-      if (pathFinder(maze, go[direction](coords), explored)) return true
+      if (pathFinder(splittedMaze, go[direction](coords), explored)) return true
 
     return false
   }
 }
 
-console.log(
-  pathFinder(`.W.
-  .W.
-  W..`)
-)
+// console.log(
+//   pathFinder(`.W.
+//   .W.
+//   W..`)
+// )
