@@ -1,21 +1,22 @@
-// Yield an object with the current index (starting from end of every arrays passed as argument)
-// And the values at each array ends
-function* browseArraysByEnd(...arrs) {
+function* browseArraysByEnd(arrs) {
   const xs = arrs.map(a => a.slice())
   while (xs.some(a => a.length)) yield xs.map(a => a.pop())
 }
 
 const sumStrings = (a, b) => {
-  let detention = 0,
-    result = ''
-  for (const nums of browseArraysByEnd(...[a, b].map(s => s.split('')))) {
+  let detention = 0
+  let result = ''
+
+  for (const nums of browseArraysByEnd(
+    [a, b].map(s => s.replace(/^0+/, '').split(''))
+  )) {
     const addition = nums.reduce((x, y) => x + (y ? +y : 0), 0) + detention
 
-    if (addition > 10)
-      (result = (addition - 10).toString() + result),
-        (detention = addition - 10)
+    if (addition >= 10)
+      (result = (addition - 10).toString() + result), (detention = 1)
     else (result = addition.toString() + result), (detention = 0)
   }
-  return result
+
+  return detention ? detention.toString() + result : result
 }
 console.log(sumStrings('99', '1'))
