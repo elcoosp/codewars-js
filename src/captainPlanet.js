@@ -29,16 +29,6 @@ const replaceAll = (splitter, joiner = '') => x =>
 const isLast = (i, a) => i === a.length - 1
 const splitNewLine = x => x.split('\n')
 
-// Transform an array of fields string (key/value separated by a comma) into an array of objects
-const fieldsToObj = fieldsArr =>
-  fieldsArr.reduce((acc, field) => {
-    if (field) {
-      const [key, value] = field.split(':').map(s => s.trim())
-      acc[key] = value
-    }
-    return acc
-  }, {})
-
 // Cut the data in grouped sections
 const splitBySeparator = data => {
   const SEPARATOR = '##################################'
@@ -51,15 +41,49 @@ const splitBySeparator = data => {
           : replaceAll(SEPARATOR + '\n')(s)
     )
 }
+// Transform an array of fields string (key/value separated by a comma) into an array of objects
+const fieldsToObj = (fieldKeyPredicate, fieldValueMapper) => fieldsArr =>
+  fieldsArr.reduce((acc, field) => {
+    if (field) {
+      const [key, value] = field.split(':').map(s => s.trim())
+      if (fieldKeyPredicate(key)) acc[key] = fieldValueMapper(value)
+    }
+    return acc
+  }, {})
+
+// Keys which are allowed in the objectified data
+const isAllowedKey = k =>
+  ['Location', 'Ammonia', 'Nitrogen Oxide', 'Carbon Monoxide'].includes(k)
+
+// Parse Int if particle field
+const sanitizeParticles = x => (x.includes('particles') ? parseInt(x, 10) : x)
+
+const toHighSentence = (substance, location) =>
+  `${substance} levels in ${location} are too high`
+
+const maxProp = (
+  o,
+  max = Math.max(...Object.values(o)),
+  [[key, value]] = Object.entries(o).filter(([k, value]) => value === max)
+) => key
+
+const toSentence = data =>
+  data
+    .reduce((acc, locationData) => {
+      const { Location, ...particles } = locationData
+
+      return acc + toHighSentence(maxProp(particles), Location) + '. '
+    }, '')
+    .trim()
 
 const parseData = () => {
-  const objectified = splitBySeparator(dataFile).map(
+  const locationsDataArr = splitBySeparator(dataFile).map(
     pipe(
       splitNewLine,
-      fieldsToObj
+      fieldsToObj(isAllowedKey, sanitizeParticles)
     )
   )
-  console.log(objectified)
-}
 
-parseData()
+  return toSentence(locationsDataArr)
+}
+console.log(parseData())
